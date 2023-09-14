@@ -132,8 +132,8 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet:
     else left.filterAcc(p, right.filterAcc(p, acc))
 
   def union(that: TweetSet): TweetSet =
-   if(this.isEmpty) that
-   else if (that.isEmpty) this
+   if this.isEmpty then that
+   else if that.isEmpty then this
    else left.union(right.union(that.incl(elem)))
 
   /**
