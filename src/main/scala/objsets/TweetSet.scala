@@ -65,8 +65,9 @@ abstract class TweetSet extends TweetSetInterface:
    * Question: Should we implement this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def mostRetweeted: Tweet = ???
+  def mostRetweeted: Tweet
 
+  def mostRetweetedAcc(acc: Tweet): Tweet
   /**
    * Returns a list containing all tweets of this set, sorted by retweet count
    * in descending order. In other words, the head of the resulting list should
@@ -76,7 +77,7 @@ abstract class TweetSet extends TweetSetInterface:
    * Question: Should we implement this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def descendingByRetweet: TweetList = ???
+  def descendingByRetweet: TweetList
 
   /**
    * The following methods are already implemented
@@ -107,11 +108,16 @@ abstract class TweetSet extends TweetSetInterface:
 
 class Empty extends TweetSet:
   def isEmpty = true
+  def descendingByRetweet = Nil
 
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
 
   def union(that: TweetSet): TweetSet = that
 
+  def mostRetweeted: Tweet =
+    throw new NoSuchElementException("Empty Set")
+
+  def mostRetweetedAcc(acc: Tweet) = acc
   /**
    * The following methods are already implemented
    */
@@ -135,6 +141,17 @@ class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet:
    if this.isEmpty then that
    else if that.isEmpty then this
    else left.union(right.union(that.incl(elem)))
+
+  def mostRetweeted: Tweet =
+    mostRetweetedAcc(elem)
+
+  def mostRetweetedAcc(acc: Tweet): Tweet =
+    if (this.elem.retweets >= acc.retweets) right.mostRetweetedAcc(left.mostRetweetedAcc(elem))
+    else right.mostRetweetedAcc(left.mostRetweetedAcc(acc))
+
+  def descendingByRetweet =
+    val t = this.mostRetweeted
+    new Cons(t, this.remove(t).descendingByRetweet)
 
   /**
    * The following methods are already implemented
@@ -190,14 +207,16 @@ object GoogleVsApple:
   val google = List("android", "Android", "galaxy", "Galaxy", "nexus", "Nexus")
   val apple = List("ios", "iOS", "iphone", "iPhone", "ipad", "iPad")
 
-  lazy val googleTweets: TweetSet = ???
-  lazy val appleTweets: TweetSet = ???
+  lazy val googleTweets: TweetSet = TweetReader.allTweets.filter(
+    tweet => google.exists(word => tweet.text.contains(word)))
+  lazy val appleTweets: TweetSet = TweetReader.allTweets.filter(
+    tweet => apple.exists(word => tweet.text.contains(word)))
 
   /**
    * A list of all tweets mentioning a keyword from either apple or google,
    * sorted by the number of retweets.
    */
-  lazy val trending: TweetList = ???
+  lazy val trending: TweetList = (googleTweets.union(appleTweets)).descendingByRetweet
 
 object Main extends App:
   // Print the trending tweets
