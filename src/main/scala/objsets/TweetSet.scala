@@ -32,7 +32,6 @@ class Tweet(val user: String, val text: String, val retweets: Int):
  * [1] http://en.wikipedia.org/wiki/Binary_search_tree
  */
 abstract class TweetSet extends TweetSetInterface:
-  def isEmpty: Boolean
 
   /**
    * This method takes a predicate and returns a subset of all the elements
@@ -66,8 +65,6 @@ abstract class TweetSet extends TweetSetInterface:
    * and be implemented in the subclasses?
    */
   def mostRetweeted: Tweet
-
-  def mostRetweetedAcc(acc: Tweet): Tweet
   /**
    * Returns a list containing all tweets of this set, sorted by retweet count
    * in descending order. In other words, the head of the resulting list should
@@ -107,7 +104,6 @@ abstract class TweetSet extends TweetSetInterface:
   def foreach(f: Tweet => Unit): Unit
 
 class Empty extends TweetSet:
-  def isEmpty = true
   def descendingByRetweet = Nil
 
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
@@ -131,23 +127,19 @@ class Empty extends TweetSet:
   def foreach(f: Tweet => Unit): Unit = ()
 
 class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet:
-  def isEmpty: Boolean = false
 
   def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet =
-    if (p(elem)) left.filterAcc(p, right.filterAcc(p, acc.incl(elem)))
+    if p(elem) then left.filterAcc(p, right.filterAcc(p, acc.incl(elem)))
     else left.filterAcc(p, right.filterAcc(p, acc))
 
   def union(that: TweetSet): TweetSet =
-   if this.isEmpty then that
-   else if that.isEmpty then this
-   else left.union(right.union(that.incl(elem)))
+    left.union(right.union(that.incl(elem)))
 
   def mostRetweeted: Tweet =
-    mostRetweetedAcc(elem)
+    var tweet: Tweet = new Tweet("", "", -1)
+    foreach(t => if (t.retweets >= tweet.retweets) tweet = t)
+    tweet
 
-  def mostRetweetedAcc(acc: Tweet): Tweet =
-    if (this.elem.retweets >= acc.retweets) right.mostRetweetedAcc(left.mostRetweetedAcc(elem))
-    else right.mostRetweetedAcc(left.mostRetweetedAcc(acc))
 
   def descendingByRetweet =
     val t = this.mostRetweeted
